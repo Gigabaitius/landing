@@ -353,6 +353,12 @@
             display: block;
             background: var(--card);
         }
+.card, .gallery-item {
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
 
         .biz-footer {
             height: 40px;
@@ -992,6 +998,42 @@
         }
     </style>
 </head>
+<script>
+document.querySelectorAll('.editable-image').forEach(img => {
+  img.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          img.src = data.url; // заменяем именно эту картинку
+        } else {
+          alert('Ошибка: ' + data.error);
+        }
+      } catch (err) {
+        alert('Ошибка сервера');
+      }
+    };
+
+    input.click();
+  });
+});
+</script>
+
 <body>
     <!-- Admin Panel -->
     <div class="admin-panel" id="adminPanel">
