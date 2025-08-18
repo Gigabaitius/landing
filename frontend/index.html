@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -229,12 +229,21 @@
             flex-direction: column;
         }
 
-        .work-card img {
+        /* обертка для картинки в work-card, чтобы плюс накрывал только медиа */
+        .work-media {
+            position: relative;
             width: 100%;
             height: 70%;
+            flex-shrink: 0;
+            overflow: hidden;
+            background: var(--card);
+        }
+
+        .work-media img {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
             display: block;
-            flex-shrink: 0;
         }
 
         .work-card:hover {
@@ -323,14 +332,44 @@
             cursor: pointer;
             transition: transform 0.3s ease;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
-        .bizcard img {
+        /* обертка для картинки визитки: оставляем 40px под иконку/текст */
+        .biz-media {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 40px);
+            background: var(--card);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .biz-media img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain; /* чтобы не обрезалось */
             display: block;
             background: var(--card);
+        }
+
+        .biz-footer {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px 0 12px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .biz-title {
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: calc(100% - 36px);
         }
 
         .bizcard:hover {
@@ -821,6 +860,51 @@
             transition: transform 0.3s ease;
         }
 
+        /* 🔹 Overlay + и карандаш */
+        .overlay-plus {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 56px;
+            color: rgba(255,255,255,0.95);
+            background: rgba(0,0,0,0.45);
+            opacity: 0;
+            transition: opacity .2s ease;
+            pointer-events: none; /* кликается только в админ-режиме */
+        }
+
+        .edit-icon {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.6);
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 6px;
+            padding: 4px 6px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            cursor: pointer;
+            pointer-events: none;
+        }
+
+        /* Показываем + и ✏ только в админ-режиме при наведении */
+        .admin-mode .work-media:hover .overlay-plus,
+        .admin-mode .biz-media:hover .overlay-plus {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .admin-mode .work-media:hover .edit-icon,
+        .admin-mode .biz-media:hover .edit-icon,
+        .admin-mode .biz-footer:hover .edit-icon {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             :root {
@@ -920,6 +1004,8 @@
         <label for="aboutPhotoUpload" class="admin-upload-label">
             👤 Изменить фото "Обо мне"
         </label>
+        <!-- скрытый input для замены конкретного изображения -->
+        <input type="file" id="replaceUpload" class="admin-upload" accept="image/*">
         <div class="loading-spinner" id="loadingSpinner"></div>
         <button class="admin-save-btn" onclick="saveAllChanges()">💾 Сохранить изменения</button>
     </div>
@@ -977,7 +1063,11 @@
             <div class="works-viewport">
                 <div class="works-track" id="workstrack">
                     <div class="work-card tilt">
-                        <img src="https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=400&h=280&fit=crop" alt="Bakery Website">
+                        <div class="work-media">
+                            <img src="https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=400&h=280&fit=crop" alt="Bakery Website">
+                            <div class="overlay-plus" title="Заменить фото">+</div>
+                            <button class="edit-icon" title="Редактировать">✏</button>
+                        </div>
                         <div class="work-content">
                             <h3 class="work-title editable" contenteditable="false">Сайт пекарни</h3>
                             <p class="work-description editable" contenteditable="false">Современный сайт с онлайн-заказами и каталогом продукции</p>
@@ -986,7 +1076,11 @@
                     </div>
                     
                     <div class="work-card tilt">
-                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=280&fit=crop" alt="Contact Page">
+                        <div class="work-media">
+                            <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=280&fit=crop" alt="Contact Page">
+                            <div class="overlay-plus" title="Заменить фото">+</div>
+                            <button class="edit-icon" title="Редактировать">✏</button>
+                        </div>
                         <div class="work-content">
                             <h3 class="work-title editable" contenteditable="false">Страница контактов</h3>
                             <p class="work-description editable" contenteditable="false">Удобная форма обратной связи с интеграцией карт</p>
@@ -995,7 +1089,11 @@
                     </div>
                     
                     <div class="work-card tilt">
-                        <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=400&h=280&fit=crop" alt="About Company">
+                        <div class="work-media">
+                            <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=400&h=280&fit=crop" alt="About Company">
+                            <div class="overlay-plus" title="Заменить фото">+</div>
+                            <button class="edit-icon" title="Редактировать">✏</button>
+                        </div>
                         <div class="work-content">
                             <h3 class="work-title editable" contenteditable="false">О компании</h3>
                             <p class="work-description editable" contenteditable="false">Презентационная страница с историей и командой</p>
@@ -1004,7 +1102,11 @@
                     </div>
                     
                     <div class="work-card tilt">
-                        <img src="https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=400&h=280&fit=crop" alt="Contact Form">
+                        <div class="work-media">
+                            <img src="https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=400&h=280&fit=crop" alt="Contact Form">
+                            <div class="overlay-plus" title="Заменить фото">+</div>
+                            <button class="edit-icon" title="Редактировать">✏</button>
+                        </div>
                         <div class="work-content">
                             <h3 class="work-title editable" contenteditable="false">Форма заявки</h3>
                             <p class="work-description editable" contenteditable="false">Многошаговая форма с валидацией и отправкой</p>
@@ -1031,22 +1133,64 @@
             <div class="bizviewport">
                 <div class="biztrack" id="biztrack">
                     <div class="bizcard" data-modal="biz1">
-                        <img src="https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=600&fit=crop&crop=center" alt="Business Card 1">
+                        <div class="biz-media">
+                            <img src="https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=600&fit=crop&crop=center" alt="Business Card 1">
+                            <div class="overlay-plus" title="Заменить фото">+</div>
+                            <button class="edit-icon" title="Редактировать">✏</button>
+                        </div>
+                        <div class="biz-footer">
+                            <span class="biz-title editable" contenteditable="false">Business Card 1</span>
+                        </div>
                     </div>
                     <div class="bizcard" data-modal="biz2">
-                        <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?w=400&h=600&fit=crop&crop=center" alt="Business Card 2">
+                        <div class="biz-media">
+                            <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?w=400&h=600&fit=crop&crop=center" alt="Business Card 2">
+                            <div class="overlay-plus" title="Заменить фото">+</div>
+                            <button class="edit-icon" title="Редактировать">✏</button>
+                        </div>
+                        <div class="biz-footer">
+                            <span class="biz-title editable" contenteditable="false">Business Card 2</span>
+                        </div>
                     </div>
                     <div class="bizcard" data-modal="biz3">
-                        <img src="https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop&crop=center" alt="Business Card 3">
+                        <div class="biz-media">
+                            <img src="https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=400&h=600&fit=crop&crop=center" alt="Business Card 3">
+                            <div class="overlay-plus" title="Заменить фото">+</div>
+                            <button class="edit-icon" title="Редактировать">✏</button>
+                        </div>
+                        <div class="biz-footer">
+                            <span class="biz-title editable" contenteditable="false">Business Card 3</span>
+                        </div>
                     </div>
                     <div class="bizcard" data-modal="biz4">
-                        <img src="https://images.unsplash.com/photo-1558655146-364adaf5aa84?w=400&h=600&fit=crop&crop=center" alt="Business Card 4">
+                        <div class="biz-media">
+                            <img src="https://images.unsplash.com/photo-1558655146-364adaf5aa84?w=400&h=600&fit=crop&crop=center" alt="Business Card 4">
+                            <div class="overlay-plus" title="Заменить фото">+</div>
+                            <button class="edit-icon" title="Редактировать">✏</button>
+                        </div>
+                        <div class="biz-footer">
+                            <span class="biz-title editable" contenteditable="false">Business Card 4</span>
+                        </div>
                     </div>
                     <div class="bizcard" data-modal="biz5">
-                        <img src="https://images.unsplash.com/photo-1558655146-0c5b08a61c24?w=400&h=600&fit=crop&crop=center" alt="Business Card 5">
+                        <div class="biz-media">
+                            <img src="https://images.unsplash.com/photo-1558655146-0c5b08a61c24?w=400&h=600&fit=crop&crop=center" alt="Business Card 5">
+                            <div class="overlay-plus" title="Заменить фото">+</div>
+                            <button class="edit-icon" title="Редактировать">✏</button>
+                        </div>
+                        <div class="biz-footer">
+                            <span class="biz-title editable" contenteditable="false">Business Card 5</span>
+                        </div>
                     </div>
                     <div class="bizcard" data-modal="biz6">
-                        <img src="https://images.unsplash.com/photo-1558655146-fbd9c2d8ea8b?w=400&h=600&fit=crop&crop=center" alt="Business Card 6">
+                        <div class="biz-media">
+                            <img src="https://images.unsplash.com/photo-1558655146-fbd9c2d8ea8b?w=400&h=600&fit=crop&crop=center" alt="Business Card 6">
+                            <div class="overlay-plus" title="Заменить фото">+</div>
+                            <button class="edit-icon" title="Редактировать">✏</button>
+                        </div>
+                        <div class="biz-footer">
+                            <span class="biz-title editable" contenteditable="false">Business Card 6</span>
+                        </div>
                     </div>
                     <div class="add-card" id="addCard">
                         <div class="add-icon">+</div>
@@ -1173,6 +1317,9 @@
         let isAdminMode = false;
         let nextCardId = 7;
         let nextWorkId = 5;
+
+        // таргет для замены конкретного изображения
+        let replaceTargetImg = null;
         
         // Check for admin access
         const urlParams = new URLSearchParams(window.location.search);
@@ -1198,6 +1345,7 @@
             });
             
             updateCarousels();
+            initEditUI();
         }
         
         // Загрузка изображения на сервер
@@ -1325,16 +1473,42 @@
                 oldCards.forEach(card => card.remove());
                 
                 // Добавляем сохраненные визитки
-                data.bizcards.forEach(cardData => {
+                data.bizcards.forEach((cardData, idx) => {
                     const newCard = document.createElement('div');
                     newCard.className = 'bizcard';
                     newCard.setAttribute('data-modal', cardData.id);
                     
+                    const media = document.createElement('div');
+                    media.className = 'biz-media';
+
                     const img = document.createElement('img');
                     img.src = cardData.src;
                     img.alt = cardData.alt;
-                    
-                    newCard.appendChild(img);
+
+                    const overlay = document.createElement('div');
+                    overlay.className = 'overlay-plus';
+                    overlay.textContent = '+';
+                    overlay.title = 'Заменить фото';
+
+                    const pencil = document.createElement('button');
+                    pencil.className = 'edit-icon';
+                    pencil.textContent = '✏';
+                    pencil.title = 'Редактировать';
+
+                    media.appendChild(img);
+                    media.appendChild(overlay);
+                    media.appendChild(pencil);
+
+                    const footer = document.createElement('div');
+                    footer.className = 'biz-footer';
+                    const title = document.createElement('span');
+                    title.className = 'biz-title editable';
+                    title.contentEditable = isAdminMode;
+                    title.textContent = cardData.alt || `Business Card ${idx+1}`;
+                    footer.appendChild(title);
+
+                    newCard.appendChild(media);
+                    newCard.appendChild(footer);
                     biztrack.insertBefore(newCard, addCard);
                 });
             }
@@ -1353,10 +1527,27 @@
                     const newCard = document.createElement('div');
                     newCard.className = 'work-card tilt';
                     
+                    const media = document.createElement('div');
+                    media.className = 'work-media';
+
                     const img = document.createElement('img');
                     img.src = workData.src;
                     img.alt = workData.alt;
-                    
+
+                    const overlay = document.createElement('div');
+                    overlay.className = 'overlay-plus';
+                    overlay.textContent = '+';
+                    overlay.title = 'Заменить фото';
+
+                    const pencil = document.createElement('button');
+                    pencil.className = 'edit-icon';
+                    pencil.textContent = '✏';
+                    pencil.title = 'Редактировать';
+
+                    media.appendChild(img);
+                    media.appendChild(overlay);
+                    media.appendChild(pencil);
+
                     const content = document.createElement('div');
                     content.className = 'work-content';
                     content.innerHTML = `
@@ -1365,13 +1556,14 @@
                         <a href="${workData.link}" class="work-btn">Открыть проект</a>
                     `;
                     
-                    newCard.appendChild(img);
+                    newCard.appendChild(media);
                     newCard.appendChild(content);
                     workstrack.insertBefore(newCard, addWorkCard);
                 });
             }
             
             updateCarousels();
+            initEditUI();
         }
         
         // Получение селектора элемента
@@ -1403,416 +1595,31 @@
             return selector;
         }
         
-        // File upload handlers
+        // File upload handlers (bulk add)
         document.getElementById('adminUpload').addEventListener('change', function(e) {
             const files = e.target.files;
             
             if (files.length === 1) {
-                // Один файл - спрашиваем куда добавить
                 const fileType = prompt('Куда добавить изображение?\n1 - Визитки\n2 - Работы');
-                
                 if (fileType === '1') {
                     addNewBizCard(files[0]);
                 } else if (fileType === '2') {
                     addNewWorkCard(files[0]);
                 }
             } else if (files.length > 1) {
-                // Несколько файлов - спрашиваем куда добавить все
                 const fileType = prompt(`Куда добавить ${files.length} изображений?\n1 - Визитки\n2 - Работы`);
-                
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     if (file.type.startsWith('image/')) {
-                        if (fileType === '1') {
-                            addNewBizCard(file);
-                        } else if (fileType === '2') {
-                            addNewWorkCard(file);
-                        }
+                        if (fileType === '1') addNewBizCard(file);
+                        else if (fileType === '2') addNewWorkCard(file);
                     }
                 }
             }
-            
             e.target.value = '';
         });
-        
-        // About photo upload
-        document.getElementById('aboutPhotoUpload').addEventListener('change', async function(e) {
+
+        // Replace handler (per-card)
+        document.getElementById('replaceUpload').addEventListener('change', async function(e) {
             const file = e.target.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const imageUrl = await uploadImageToServer(file);
-                if (imageUrl) {
-                    document.querySelector('.about-photo img').src = imageUrl;
-                }
-            }
-        });
-        
-        // About photo click handler
-        document.getElementById('aboutPhoto').addEventListener('click', function() {
-            if (isAdminMode) {
-                document.getElementById('aboutPhotoUpload').click();
-            }
-        });
-        
-        async function addNewBizCard(file) {
-            if (!file || !file.type.startsWith('image/')) {
-                console.error('Неверный тип файла');
-                return;
-            }
-            
-            // Загружаем на сервер
-            const imageUrl = await uploadImageToServer(file);
-            if (!imageUrl) {
-                return;
-            }
-            
-            const newCard = document.createElement('div');
-            newCard.className = 'bizcard';
-            newCard.setAttribute('data-modal', `biz${nextCardId}`);
-            
-            const img = document.createElement('img');
-            img.src = imageUrl;
-            img.alt = `Business Card ${nextCardId}`;
-            
-            newCard.appendChild(img);
-            
-            const addCard = document.getElementById('addCard');
-            addCard.parentNode.insertBefore(newCard, addCard);
-            
-            nextCardId++;
-            updateCarousels();
-            
-            console.log('Новая визитка добавлена!');
-        }
-        
-        async function addNewWorkCard(file) {
-            if (!file || !file.type.startsWith('image/')) {
-                console.error('Неверный тип файла');
-                return;
-            }
-            
-            // Загружаем на сервер
-            const imageUrl = await uploadImageToServer(file);
-            if (!imageUrl) {
-                return;
-            }
-            
-            const newCard = document.createElement('div');
-            newCard.className = 'work-card tilt';
-            
-            const img = document.createElement('img');
-            img.src = imageUrl;
-            img.alt = `Work ${nextWorkId}`;
-            
-            const content = document.createElement('div');
-            content.className = 'work-content';
-            content.innerHTML = `
-                <h3 class="work-title editable" contenteditable="${isAdminMode}">Новый проект</h3>
-                <p class="work-description editable" contenteditable="${isAdminMode}">Описание проекта, которое может быть очень длинным и содержать много деталей о проекте, технологиях и подходах</p>
-                <a href="#" class="work-btn">Открыть проект</a>
-            `;
-            
-            newCard.appendChild(img);
-            newCard.appendChild(content);
-            
-            const addCard = document.getElementById('addWorkCard');
-            addCard.parentNode.insertBefore(newCard, addCard);
-            
-            nextWorkId++;
-            updateCarousels();
-            
-            console.log('Новая работа добавлена!');
-        }
-        
-        function updateCarousels() {
-            bizcards = document.querySelectorAll('.bizcard');
-            workcards = document.querySelectorAll('.work-card');
-            initCardEvents();
-            setBizCarouselPosition();
-            setWorkCarouselPosition();
-        }
-        
-        // Add card button handlers
-        document.getElementById('addCard').addEventListener('click', function() {
-            const input = document.getElementById('adminUpload');
-            input.click();
-        });
-        
-        document.getElementById('addWorkCard').addEventListener('click', function() {
-            const input = document.getElementById('adminUpload');
-            input.click();
-        });
-        
-        // Marquee Animation
-        let marqueeOffset = 0;
-        const marquee = document.getElementById('marquee');
-        
-        function animateMarquee() {
-            marqueeOffset += 0.4;
-            if (marqueeOffset >= marquee.scrollWidth / 2) {
-                marqueeOffset = 0;
-            }
-            marquee.style.transform = `translateX(-${marqueeOffset}px)`;
-            requestAnimationFrame(animateMarquee);
-        }
-        
-        // Reveal Animation
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('in');
-                }
-            });
-        }, { threshold: 0.12 });
-        
-        document.querySelectorAll('.reveal').forEach(el => {
-            observer.observe(el);
-        });
-        
-        // Tilt Effect
-        document.querySelectorAll('.tilt').forEach(el => {
-            el.addEventListener('mousemove', (e) => {
-                const rect = el.getBoundingClientRect();
-                const x = e.clientX - rect.left - rect.width / 2;
-                const y = e.clientY - rect.top - rect.height / 2;
-                
-                const rotateX = (y / rect.height) * -10;
-                const rotateY = (x / rect.width) * 10;
-                
-                el.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-            });
-            
-            el.addEventListener('mouseleave', () => {
-                el.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
-            });
-        });
-        
-        // Carousel Logic - Визитки
-        const biztrack = document.getElementById('biztrack');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        let bizcards = document.querySelectorAll('.bizcard');
-        let currentBizIndex = 0;
-        
-        function setBizCarouselPosition() {
-            if (bizcards.length === 0) return;
-            const cardWidth = bizcards[0].offsetWidth;
-            const gap = 20;
-            const containerWidth = document.querySelector('.bizviewport').offsetWidth;
-            const trackPadding = 40;
-            const maxOffset = Math.max(0, (cardWidth + gap) * bizcards.length - containerWidth + trackPadding);
-            const offset = Math.min(currentBizIndex * (cardWidth + gap), maxOffset);
-            biztrack.style.transform = `translateX(-${offset}px)`;
-        }
-
-        function clampBizIndex(index) {
-            const cardWidth = bizcards[0]?.offsetWidth || 200;
-            const gap = 20;
-            const containerWidth = document.querySelector('.bizviewport').offsetWidth;
-            const maxIndex = Math.max(0, Math.ceil((cardWidth + gap) * bizcards.length / containerWidth) - 1);
-            return Math.max(0, Math.min(index, maxIndex));
-        }
-        
-        prevBtn.addEventListener('click', () => {
-            currentBizIndex = clampBizIndex(currentBizIndex - 1);
-            setBizCarouselPosition();
-        });
-        
-        nextBtn.addEventListener('click', () => {
-            currentBizIndex = clampBizIndex(currentBizIndex + 1);
-            setBizCarouselPosition();
-        });
-        
-        // Carousel Logic - Работы
-        const workstrack = document.getElementById('workstrack');
-        const prevWorkBtn = document.getElementById('prevWorkBtn');
-        const nextWorkBtn = document.getElementById('nextWorkBtn');
-        let workcards = document.querySelectorAll('.work-card');
-        let currentWorkIndex = 0;
-        
-        function setWorkCarouselPosition() {
-            if (workcards.length === 0) return;
-            const cardWidth = workcards[0].offsetWidth;
-            const gap = 20;
-            const containerWidth = document.querySelector('.works-viewport').offsetWidth;
-            const trackPadding = 40;
-            const maxOffset = Math.max(0, (cardWidth + gap) * workcards.length - containerWidth + trackPadding);
-            const offset = Math.min(currentWorkIndex * (cardWidth + gap), maxOffset);
-            workstrack.style.transform = `translateX(-${offset}px)`;
-        }
-
-        function clampWorkIndex(index) {
-            const cardWidth = workcards[0]?.offsetWidth || 300;
-            const gap = 20;
-            const containerWidth = document.querySelector('.works-viewport').offsetWidth;
-            const maxIndex = Math.max(0, Math.ceil((cardWidth + gap) * workcards.length / containerWidth) - 1);
-            return Math.max(0, Math.min(index, maxIndex));
-        }
-        
-        prevWorkBtn.addEventListener('click', () => {
-            currentWorkIndex = clampWorkIndex(currentWorkIndex - 1);
-            setWorkCarouselPosition();
-        });
-        
-        nextWorkBtn.addEventListener('click', () => {
-            currentWorkIndex = clampWorkIndex(currentWorkIndex + 1);
-            setWorkCarouselPosition();
-        });
-        
-        // Modal Logic
-        const modal = document.getElementById('modal');
-        const modalImage = document.getElementById('modalImage');
-        const modalClose = document.getElementById('modalClose');
-        
-        // Work Modal Logic
-        const workModal = document.getElementById('workModal');
-        const workModalImage = document.getElementById('workModalImage');
-        const workModalTitle = document.getElementById('workModalTitle');
-        const workModalDescription = document.getElementById('workModalDescription');
-        const workModalBtn = document.getElementById('workModalBtn');
-        const workModalClose = document.getElementById('workModalClose');
-        
-        function initCardEvents() {
-            const currentBizCards = document.querySelectorAll('.bizcard');
-            const currentWorkCards = document.querySelectorAll('.work-card');
-            
-            // Для визиток убираем hover эффекты на десктопе, оставляем только клик на мобиле
-            if (window.innerWidth <= 768) {
-                currentBizCards.forEach(card => {
-                    card.removeEventListener('click', handleBizMobileClick);
-                    card.addEventListener('click', handleBizMobileClick);
-                });
-            }
-            
-            // Для работ оставляем клик на всех устройствах
-            currentWorkCards.forEach(card => {
-                card.removeEventListener('click', handleWorkClick);
-                card.addEventListener('click', handleWorkClick);
-            });
-        }
-        
-        function handleWorkClick(e) {
-            e.preventDefault();
-            const workCard = e.currentTarget;
-            const img = workCard.querySelector('img');
-            const title = workCard.querySelector('.work-title');
-            const description = workCard.querySelector('.work-description');
-            const btn = workCard.querySelector('.work-btn');
-            
-            workModalImage.src = img.src;
-            workModalImage.alt = img.alt;
-            workModalTitle.textContent = title.textContent;
-            workModalDescription.textContent = description.textContent;
-            workModalBtn.href = btn.href;
-            
-            workModal.style.display = 'block';
-        }
-        
-        function handleBizMobileClick(e) {
-            const img = e.currentTarget.querySelector('img');
-            modalImage.src = img.src;
-            modalImage.alt = img.alt;
-            modal.style.display = 'block';
-        }
-        
-        modalClose.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-        
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-        
-        workModalClose.addEventListener('click', () => {
-            workModal.style.display = 'none';
-        });
-        
-        workModal.addEventListener('click', (e) => {
-            if (e.target === workModal) {
-                workModal.style.display = 'none';
-            }
-        });
-        
-        // Form Submission
-        const contactForm = document.getElementById('contactForm');
-        const formStatus = document.getElementById('formStatus');
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxYUaAiV0Vq8uvNPSVyawcCiHDV4N3HFr1TT4dmDTesQ42sBgHbiOQkdNAodil8DTDV/exec';
-        
-        contactForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            formStatus.style.display = 'block';
-            formStatus.className = 'form-status';
-            formStatus.textContent = 'Отправка...';
-            
-            const formData = new FormData(contactForm);
-            const data = new URLSearchParams();
-            
-            for (let [key, value] of formData.entries()) {
-                data.append(key, value);
-            }
-            
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-                    },
-                    body: data,
-                    mode: 'no-cors'
-                });
-                
-                formStatus.className = 'form-status success';
-                formStatus.textContent = 'Спасибо! Ваша заявка отправлена.';
-                contactForm.reset();
-                
-                setTimeout(() => {
-                    formStatus.style.display = 'none';
-                }, 5000);
-                
-            } catch (error) {
-                console.error('Ошибка отправки:', error);
-                formStatus.className = 'form-status error';
-                formStatus.textContent = 'Ошибка отправки: ' + error.message;
-                
-                setTimeout(() => {
-                    formStatus.style.display = 'none';
-                }, 8000);
-            }
-        });
-        
-        // Initialize
-        window.addEventListener('load', () => {
-            animateMarquee();
-            setBizCarouselPosition();
-            setWorkCarouselPosition();
-            initCardEvents();
-            
-            setTimeout(() => {
-                setBizCarouselPosition();
-                setWorkCarouselPosition();
-            }, 100);
-        });
-        
-        window.addEventListener('resize', () => {
-            setBizCarouselPosition();
-            setWorkCarouselPosition();
-        });
-        
-        // Smooth scrolling
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+            if (file && file.type.s
