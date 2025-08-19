@@ -314,6 +314,7 @@ body::before {
 .admin-mode .work-btn {
     border: 1px dashed rgba(160, 106, 247, 0.5);
     transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 .admin-mode .work-btn:hover {
@@ -324,23 +325,47 @@ body::before {
 }
 
 .admin-mode .work-btn::after {
-    content: '🔗';
+    content: '🔗 Редактировать ссылку';
     position: absolute;
-    top: -8px;
-    right: -8px;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
     font-size: 10px;
+    white-space: nowrap;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.3s ease;
-    background: var(--accent);
-    border-radius: 50%;
-    width: 16px;
-    height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    z-index: 1000;
 }
 
 .admin-mode .work-btn:hover::after {
+    opacity: 1;
+}
+
+/* Стили для обычного режима */
+body:not(.admin-mode) .work-btn::after {
+    content: '🔗 Перейти на сайт';
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+body:not(.admin-mode) .work-btn:hover::after {
     opacity: 1;
 }
 
