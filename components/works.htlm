@@ -1,0 +1,53 @@
+<!-- Works Section Component -->
+<section id="works" class="works reveal">
+    <div class="container">
+        <h2 class="section-title editable" contenteditable="false">Мои работы</h2>
+        <div class="works-viewport">
+            <div class="works-track" id="workstrack">
+                <div class="work-card tilt">
+                    <img src="https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=400&h=280&fit=crop" alt="Bakery Website">
+                    <div class="work-content">
+                        <h3 class="work-title editable" contenteditable="false">Сайт пекарни</h3>
+                        <p class="work-description editable" contenteditable="false">Современный сайт с онлайн-заказами и каталогом продукции</p>
+                        <a href="#" class="work-btn">Открыть проект</a>
+                    </div>
+                </div>
+                
+                <div class="work-card tilt">
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=280&fit=crop" alt="Contact Page">
+                    <div class="work-content">
+                        <h3 class="work-title editable" contenteditable="false">Страница контактов</h3>
+                        <p class="work-description editable" contenteditable="false">Удобная форма обратной связи с интеграцией карт</p>
+                        <a href="#" class="work-btn">Открыть проект</a>
+                    </div>
+                </div>
+                
+                <div class="work-card tilt">
+                    <img src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=400&h=280&fit=crop" alt="About Company">
+                    <div class="work-content">
+                        <h3 class="work-title editable" contenteditable="false">О компании</h3>
+                        <p class="work-description editable" contenteditable="false">Презентационная страница с историей и командой</p>
+                        <a href="#" class="work-btn">Открыть проект</a>
+                    </div>
+                </div>
+                
+                <div class="work-card tilt">
+                    <img src="https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=400&h=280&fit=crop" alt="Contact Form">
+                    <div class="work-content">
+                        <h3 class="work-title editable" contenteditable="false">Форма заявки</h3>
+                        <p class="work-description editable" contenteditable="false">Многошаговая форма с валидацией и отправкой</p>
+                        <a href="#" class="work-btn">Открыть проект</a>
+                    </div>
+                </div>
+                
+                <div class="work-add-card" id="addWorkCard">
+                    <div class="add-icon">+</div>
+                </div>
+            </div>
+        </div>
+        <div class="carousel-controls">
+            <button class="workbtn" id="prevWorkBtn" aria-label="Предыдущая работа">‹</button>
+            <button class="workbtn" id="nextWorkBtn" aria-label="Следующая работа">›</button>
+        </div>
+    </div>
+</section>
