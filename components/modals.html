@@ -1,0 +1,37 @@
+<!-- Modals Components -->
+
+<!-- Modal для визиток -->
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <button class="modal-close" id="modalClose">×</button>
+        <img id="modalImage" src="" alt="">
+    </div>
+</div>
+
+<!-- Modal для работ -->
+<div class="work-modal" id="workModal">
+    <div class="work-modal-content">
+        <button class="work-modal-close" id="workModalClose">×</button>
+        <img id="workModalImage" src="" alt="" class="work-modal-image">
+        <div class="work-modal-text">
+            <h3 id="workModalTitle" class="work-modal-title">Название проекта</h3>
+            <p id="workModalDescription" class="work-modal-description">Описание проекта</p>
+            <a href="#" id="workModalBtn" class="work-modal-btn">Открыть проект</a>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Panel -->
+<div class="admin-panel" id="adminPanel">
+    <button class="admin-toggle" onclick="toggleAdminMode()">Режим редактирования</button>
+    <input type="file" id="adminUpload" class="admin-upload" accept="image/*" multiple>
+    <label for="adminUpload" class="admin-upload-label">
+        📁 Загрузить изображения
+    </label>
+    <input type="file" id="aboutPhotoUpload" class="admin-upload" accept="image/*">
+    <label for="aboutPhotoUpload" class="admin-upload-label">
+        👤 Изменить фото "Обо мне"
+    </label>
+    <div class="loading-spinner" id="loadingSpinner"></div>
+    <button class="admin-save-btn" onclick="saveAllChanges()">💾 Сохранить изменения</button>
+</div>
