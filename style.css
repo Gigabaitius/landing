@@ -170,6 +170,8 @@ body::before {
     border-radius: var(--r);
     overflow: hidden;
     box-shadow: var(--sh);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
 }
 
 .hero-card img {
@@ -177,6 +179,18 @@ body::before {
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hero-card:hover {
+    transform: translateY(-8px) scale(1.05);
+    z-index: 10;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 8px 20px rgba(0,0,0,.3);
+}
+
+.hero-card:hover img {
+    object-fit: contain;
+    background: #000;
 }
 
 /* Works Section */
@@ -220,7 +234,7 @@ body::before {
     box-shadow: var(--sh);
     flex-shrink: 0;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -232,10 +246,18 @@ body::before {
     object-fit: cover;
     display: block;
     flex-shrink: 0;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .work-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-8px) scale(1.05);
+    z-index: 10;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 8px 20px rgba(0,0,0,.3);
+}
+
+.work-card:hover img {
+    object-fit: contain;
+    background: #000;
 }
 
 .work-content {
@@ -320,7 +342,7 @@ body::before {
     box-shadow: var(--sh);
     flex-shrink: 0;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     position: relative;
 }
 
@@ -330,11 +352,18 @@ body::before {
     object-fit: cover;
     display: block;
     background: var(--card);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .bizcard:hover {
-    transform: translateY(-4px);
-    z-index: 1;
+    transform: translateY(-8px) scale(1.08);
+    z-index: 10;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 8px 20px rgba(0,0,0,.3);
+}
+
+.bizcard:hover img {
+    object-fit: contain;
+    background: #000;
 }
 
 .carousel-controls {
@@ -387,7 +416,7 @@ body::before {
     width: var(--logo-w);
     flex-shrink: 0;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -396,7 +425,8 @@ body::before {
 }
 
 .logo-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-8px) scale(1.1);
+    z-index: 10;
 }
 
 .logo-image {
@@ -409,6 +439,11 @@ body::before {
     box-shadow: var(--sh);
     margin-bottom: 16px;
     position: relative;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.logo-card:hover .logo-image {
+    box-shadow: 0 25px 60px rgba(0,0,0,.4), 0 6px 15px rgba(0,0,0,.25);
 }
 
 .admin-mode .logo-image {
@@ -442,6 +477,12 @@ body::before {
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.logo-card:hover .logo-image img {
+    object-fit: contain;
+    background: #000;
 }
 
 .logo-text {
@@ -782,6 +823,7 @@ body::before {
     overflow: hidden;
     box-shadow: var(--sh);
     position: relative;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .about-photo img {
@@ -789,6 +831,18 @@ body::before {
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.about-photo:hover {
+    transform: translateY(-8px) scale(1.05);
+    z-index: 10;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 8px 20px rgba(0,0,0,.3);
+}
+
+.about-photo:hover img {
+    object-fit: contain;
+    background: #000;
 }
 
 .admin-mode .about-photo {
