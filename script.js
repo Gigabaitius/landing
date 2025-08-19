@@ -21,6 +21,16 @@ function toggleAdminMode() {
     isAdminMode = !isAdminMode;
     document.body.classList.toggle('admin-mode', isAdminMode);
     
+    // Обновляем текст кнопки
+    const toggleBtn = document.querySelector('.admin-toggle');
+    if (isAdminMode) {
+        toggleBtn.textContent = '✏️ Режим редактирования (ВКЛ)';
+        toggleBtn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+    } else {
+        toggleBtn.textContent = '👁️ Режим просмотра (ВЫКЛ)';
+        toggleBtn.style.background = 'linear-gradient(135deg, var(--accent), var(--accent2))';
+    }
+    
     // Enable/disable content editing
     const editables = document.querySelectorAll('.editable');
     editables.forEach(el => {
@@ -186,12 +196,20 @@ function restoreContent(data) {
             const workBtn = document.createElement('a');
             workBtn.className = 'work-btn';
             workBtn.textContent = 'Открыть проект';
-            workBtn.href = workData.link || '#';
+            
+            // Устанавливаем ссылку с проверкой
+            const linkUrl = workData.link || '#';
+            workBtn.href = linkUrl;
+            
+            console.log('Восстанавливаем ссылку для проекта:', workData.title, 'URL:', linkUrl);
             
             // Если ссылка не пустая и не "#", открываем в новом окне
-            if (workData.link && workData.link !== '#' && workData.link !== window.location.href + '#') {
+            if (linkUrl && linkUrl !== '#' && linkUrl !== window.location.href + '#' && linkUrl !== window.location.href) {
                 workBtn.target = '_blank';
                 workBtn.rel = 'noopener noreferrer';
+                console.log('Ссылка активна для:', workData.title);
+            } else {
+                console.log('Пустая ссылка для:', workData.title);
             }
             
             // Добавляем обработчик для редактирования ссылки в админ-режиме
@@ -513,6 +531,55 @@ async function addNewLogo(file) {
     }
 }
 
+// Тестирование всех ссылок
+function testAllLinks() {
+    const workButtons = document.querySelectorAll('.work-btn');
+    const validLinks = [];
+    const emptyLinks = [];
+    
+    workButtons.forEach((btn, index) => {
+        const href = btn.href;
+        const projectTitle = btn.closest('.work-card').querySelector('.work-title').textContent;
+        
+        if (href && href !== '#' && href !== window.location.href + '#' && href !== window.location.href) {
+            validLinks.push({ title: projectTitle, url: href, button: btn });
+        } else {
+            emptyLinks.push({ title: projectTitle, button: btn });
+        }
+    });
+    
+    let message = '🔗 Результаты проверки ссылок:\n\n';
+    
+    if (validLinks.length > 0) {
+        message += `✅ Проекты с ссылками (${validLinks.length}):\n`;
+        validLinks.forEach((item, index) => {
+            message += `${index + 1}. ${item.title}\n   → ${item.url}\n\n`;
+        });
+    }
+    
+    if (emptyLinks.length > 0) {
+        message += `⚠️ Проекты без ссылок (${emptyLinks.length}):\n`;
+        emptyLinks.forEach((item, index) => {
+            message += `${index + 1}. ${item.title}\n`;
+        });
+        message += '\n';
+    }
+    
+    if (validLinks.length > 0) {
+        message += 'Хотите открыть все ссылки для проверки?';
+        const openAll = confirm(message);
+        
+        if (openAll) {
+            validLinks.forEach(item => {
+                window.open(item.url, '_blank');
+            });
+        }
+    } else {
+        message += 'Добавьте ссылки через режим редактирования.';
+        alert(message);
+    }
+}
+
 // Add card button handlers
 document.getElementById('addCard').addEventListener('click', function() {
     const input = document.getElementById('adminUpload');
@@ -724,6 +791,22 @@ const workModalDescription = document.getElementById('workModalDescription');
 const workModalBtn = document.getElementById('workModalBtn');
 const workModalClose = document.getElementById('workModalClose');
 
+// Добавляем обработчик клика для кнопки в модальном окне
+workModalBtn.addEventListener('click', function(e) {
+    const href = this.href;
+    console.log('Клик по кнопке в модале, href:', href);
+    
+    if (!href || href === '#' || href === window.location.href + '#' || href === window.location.href) {
+        e.preventDefault();
+        console.log('Пустая ссылка, переход заблокирован');
+        alert('⚠️ Ссылка на проект не задана.\n\nДля добавления ссылки:\n1. Включите админ-режим\n2. Кликните на кнопку "Открыть проект" в карточке\n3. Введите URL проекта');
+        return false;
+    }
+    
+    console.log('Переход по ссылке:', href);
+    // Если это внешняя ссылка, позволяем браузеру обработать её стандартно
+});
+
 function initCardEvents() {
     const currentBizCards = document.querySelectorAll('.bizcard');
     const currentWorkCards = document.querySelectorAll('.work-card');
@@ -733,20 +816,29 @@ function initCardEvents() {
     if (window.innerWidth <= 768) {
         currentBizCards.forEach(card => {
             card.removeEventListener('click', handleBizMobileClick);
-            card.addEventListener('click', handleBizMobileClick);
+            if (!isAdminMode) {
+                card.addEventListener('click', handleBizMobileClick);
+            }
         });
     }
     
-    // Для работ оставляем клик на всех устройствах
+    // Для работ - разное поведение в зависимости от режима
     currentWorkCards.forEach(card => {
+        // Удаляем все старые обработчики
         card.removeEventListener('click', handleWorkClick);
-        card.addEventListener('click', handleWorkClick);
         
-        // Добавляем редактирование ссылок в админ-режиме
         const workBtn = card.querySelector('.work-btn');
-        if (workBtn && isAdminMode) {
+        if (workBtn) {
             workBtn.removeEventListener('click', handleWorkLinkEdit);
-            workBtn.addEventListener('click', handleWorkLinkEdit);
+            
+            if (isAdminMode) {
+                // В админ-режиме: редактирование ссылок
+                workBtn.addEventListener('click', handleWorkLinkEdit);
+            } else {
+                // В обычном режиме: открытие модала для карточки
+                card.addEventListener('click', handleWorkClick);
+                // Для кнопки - прямой переход по ссылке (стандартное поведение)
+            }
         }
     });
     
@@ -771,6 +863,25 @@ function initCardEvents() {
             if (img) {
                 img.removeEventListener('click', handleWorkImageClick);
                 img.addEventListener('click', handleWorkImageClick);
+            }
+        });
+    } else {
+        // В обычном режиме убираем обработчики редактирования
+        currentLogoCards.forEach(card => {
+            const logoImage = card.querySelector('.logo-image');
+            if (logoImage) {
+                logoImage.removeEventListener('click', handleLogoImageClick);
+            }
+        });
+        
+        currentBizCards.forEach(card => {
+            card.removeEventListener('click', handleBizImageClick);
+        });
+        
+        currentWorkCards.forEach(card => {
+            const img = card.querySelector('img');
+            if (img) {
+                img.removeEventListener('click', handleWorkImageClick);
             }
         });
     }
@@ -799,6 +910,8 @@ function handleWorkLinkEdit(e) {
         if (newLink.trim() === '') {
             workBtn.href = '#';
             workBtn.removeAttribute('target');
+            workBtn.removeAttribute('rel');
+            console.log('Ссылка удалена');
         } else {
             // Проверяем корректность ссылки
             try {
@@ -807,8 +920,21 @@ function handleWorkLinkEdit(e) {
                 workBtn.target = '_blank'; // Открываем в новом окне
                 workBtn.rel = 'noopener noreferrer'; // Безопасность
                 console.log('Ссылка обновлена:', url.href);
+                
+                // Проверочное сообщение
+                const testNow = confirm(
+                    '✅ Ссылка успешно сохранена!\n\n' +
+                    `URL: ${url.href}\n\n` +
+                    'Хотите протестировать переход прямо сейчас?\n' +
+                    '(Откроется в новой вкладке)'
+                );
+                
+                if (testNow) {
+                    window.open(url.href, '_blank');
+                }
+                
             } catch (error) {
-                alert('❌ Некорректная ссылка!\n\nПожалуйста, введите полный URL с http:// или https://');
+                alert('❌ Некорректная ссылка!\n\nПожалуйста, введите полный URL с http:// или https://\n\nПример: https://example.com');
             }
         }
     }
@@ -897,15 +1023,23 @@ function handleWorkClick(e) {
     
     // Копируем ссылку и атрибуты
     const modalBtn = document.getElementById('workModalBtn');
-    modalBtn.href = btn.href;
-    modalBtn.target = btn.target || '_self';
-    modalBtn.rel = btn.rel || '';
+    const btnHref = btn.href;
     
-    // Если ссылка пустая или "#", скрываем кнопку
-    if (!btn.href || btn.href === '#' || btn.href === window.location.href + '#') {
-        modalBtn.style.display = 'none';
-    } else {
+    console.log('Исходная ссылка из карточки:', btnHref); // Для отладки
+    
+    modalBtn.href = btnHref;
+    
+    // Проверяем, является ли ссылка внешней
+    if (btnHref && btnHref !== '#' && btnHref !== window.location.href + '#' && btnHref !== window.location.href) {
+        modalBtn.target = '_blank';
+        modalBtn.rel = 'noopener noreferrer';
         modalBtn.style.display = 'inline-block';
+        console.log('Кнопка в модале настроена для внешней ссылки:', btnHref); // Для отладки
+    } else {
+        modalBtn.target = '_self';
+        modalBtn.removeAttribute('rel');
+        modalBtn.style.display = 'none'; // Скрываем кнопку если ссылки нет
+        console.log('Кнопка в модале скрыта - нет валидной ссылки'); // Для отладки
     }
     
     workModal.style.display = 'block';
