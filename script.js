@@ -171,11 +171,37 @@ function restoreContent(data) {
             
             const content = document.createElement('div');
             content.className = 'work-content';
-            content.innerHTML = `
-                <h3 class="work-title editable" contenteditable="${isAdminMode}">${workData.title}</h3>
-                <p class="work-description editable" contenteditable="${isAdminMode}">${workData.description}</p>
-                <a href="${workData.link}" class="work-btn">Открыть проект</a>
-            `;
+            
+            // Создаем элементы отдельно для лучшего контроля
+            const title = document.createElement('h3');
+            title.className = 'work-title editable';
+            title.contentEditable = isAdminMode;
+            title.textContent = workData.title;
+            
+            const description = document.createElement('p');
+            description.className = 'work-description editable';
+            description.contentEditable = isAdminMode;
+            description.textContent = workData.description;
+            
+            const workBtn = document.createElement('a');
+            workBtn.className = 'work-btn';
+            workBtn.textContent = 'Открыть проект';
+            workBtn.href = workData.link || '#';
+            
+            // Если ссылка не пустая и не "#", открываем в новом окне
+            if (workData.link && workData.link !== '#' && workData.link !== window.location.href + '#') {
+                workBtn.target = '_blank';
+                workBtn.rel = 'noopener noreferrer';
+            }
+            
+            // Добавляем обработчик для редактирования ссылки в админ-режиме
+            if (isAdminMode) {
+                workBtn.addEventListener('click', handleWorkLinkEdit);
+            }
+            
+            content.appendChild(title);
+            content.appendChild(description);
+            content.appendChild(workBtn);
             
             newCard.appendChild(img);
             newCard.appendChild(content);
@@ -408,6 +434,10 @@ async function addNewWorkCard(file) {
                 };
                 input.click();
             });
+            
+            // Добавляем обработчик для редактирования ссылки
+            const workBtn = content.querySelector('.work-btn');
+            workBtn.addEventListener('click', handleWorkLinkEdit);
         }
         
         const addCard = document.getElementById('addWorkCard');
@@ -711,6 +741,13 @@ function initCardEvents() {
     currentWorkCards.forEach(card => {
         card.removeEventListener('click', handleWorkClick);
         card.addEventListener('click', handleWorkClick);
+        
+        // Добавляем редактирование ссылок в админ-режиме
+        const workBtn = card.querySelector('.work-btn');
+        if (workBtn && isAdminMode) {
+            workBtn.removeEventListener('click', handleWorkLinkEdit);
+            workBtn.addEventListener('click', handleWorkLinkEdit);
+        }
     });
     
     // Для логотипов добавляем обработчик клика по изображению в админ-режиме
@@ -736,6 +773,44 @@ function initCardEvents() {
                 img.addEventListener('click', handleWorkImageClick);
             }
         });
+    }
+}
+
+function handleWorkLinkEdit(e) {
+    if (!isAdminMode) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const workBtn = e.currentTarget;
+    const currentLink = workBtn.href;
+    
+    // Показываем диалог для редактирования ссылки
+    const newLink = prompt(
+        'Введите ссылку на проект:\n\n' +
+        'Примеры:\n' +
+        '• https://example.com\n' +
+        '• https://github.com/user/project\n' +
+        '• https://behance.net/gallery/...\n\n' +
+        'Текущая ссылка:', 
+        currentLink === window.location.href + '#' ? '' : currentLink
+    );
+    
+    if (newLink !== null) { // Пользователь не нажал "Отмена"
+        if (newLink.trim() === '') {
+            workBtn.href = '#';
+            workBtn.removeAttribute('target');
+        } else {
+            // Проверяем корректность ссылки
+            try {
+                const url = new URL(newLink.trim());
+                workBtn.href = url.href;
+                workBtn.target = '_blank'; // Открываем в новом окне
+                workBtn.rel = 'noopener noreferrer'; // Безопасность
+                console.log('Ссылка обновлена:', url.href);
+            } catch (error) {
+                alert('❌ Некорректная ссылка!\n\nПожалуйста, введите полный URL с http:// или https://');
+            }
+        }
     }
 }
 
@@ -819,7 +894,19 @@ function handleWorkClick(e) {
     workModalImage.alt = img.alt;
     workModalTitle.textContent = title.textContent;
     workModalDescription.textContent = description.textContent;
-    workModalBtn.href = btn.href;
+    
+    // Копируем ссылку и атрибуты
+    const modalBtn = document.getElementById('workModalBtn');
+    modalBtn.href = btn.href;
+    modalBtn.target = btn.target || '_self';
+    modalBtn.rel = btn.rel || '';
+    
+    // Если ссылка пустая или "#", скрываем кнопку
+    if (!btn.href || btn.href === '#' || btn.href === window.location.href + '#') {
+        modalBtn.style.display = 'none';
+    } else {
+        modalBtn.style.display = 'inline-block';
+    }
     
     workModal.style.display = 'block';
 }
