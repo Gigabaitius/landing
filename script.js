@@ -1,9 +1,4 @@
-// Backend API URLs
-const API_BASE = '';  // Пустой так как фронт и бэк на одном сервере
-const API_UPLOAD = '/api/upload';
-const API_SAVE_CONTENT = '/api/save-content';
-const API_LOAD_CONTENT = '/api/load-content';
-
+// Frontend-only версия для Netlify (без backend)
 // Admin functionality
 let isAdminMode = false;
 let nextCardId = 7;
@@ -14,7 +9,6 @@ let nextLogoId = 6;
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('admin') === 'true') {
     document.getElementById('adminPanel').style.display = 'block';
-    loadSavedContent(); // Загружаем сохраненный контент при входе в админку
 }
 
 // Функция показа спиннера загрузки
@@ -36,102 +30,88 @@ function toggleAdminMode() {
     updateCarousels();
 }
 
-// Загрузка изображения на сервер
-async function uploadImageToServer(file) {
+// Frontend-only загрузка изображения (через FileReader)
+function uploadImageLocal(file) {
+    return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith('image/')) {
+            reject(new Error('Неверный тип файла'));
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            resolve(e.target.result); // возвращаем data URL
+        };
+        reader.onerror = function() {
+            reject(new Error('Ошибка чтения файла'));
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Сохранение в localStorage (вместо сервера)
+function saveAllChanges() {
     showLoading(true);
-    const formData = new FormData();
-    formData.append('image', file);
     
     try {
-        const response = await fetch(API_UPLOAD, {
-            method: 'POST',
-            body: formData
-        });
+        const contentData = {
+            editableContent: Array.from(document.querySelectorAll('.editable')).map(el => ({
+                selector: getElementSelector(el),
+                content: el.innerHTML
+            })),
+            aboutPhoto: document.querySelector('.about-photo img').src,
+            bizcards: Array.from(document.querySelectorAll('.bizcard')).map((card, index) => ({
+                id: `biz${index + 1}`,
+                src: card.querySelector('img').src,
+                alt: card.querySelector('img').alt
+            })),
+            workcards: Array.from(document.querySelectorAll('.work-card')).map((card, index) => ({
+                id: `work${index + 1}`,
+                src: card.querySelector('img').src,
+                alt: card.querySelector('img').alt,
+                title: card.querySelector('.work-title').textContent,
+                description: card.querySelector('.work-description').textContent,
+                link: card.querySelector('.work-btn').href
+            })),
+            logocards: Array.from(document.querySelectorAll('.logo-card')).map((card, index) => ({
+                id: `logo${index + 1}`,
+                src: card.querySelector('img').src,
+                alt: card.querySelector('img').alt,
+                text: card.querySelector('.logo-text').textContent
+            })),
+            timestamp: new Date().toISOString()
+        };
         
-        const result = await response.json();
+        localStorage.setItem('nikadesigner_content', JSON.stringify(contentData));
         
-        if (result.success) {
-            console.log('Файл загружен на сервер:', result.filename);
-            return result.url;
-        } else {
-            throw new Error(result.error || 'Ошибка загрузки');
-        }
+        setTimeout(() => {
+            showLoading(false);
+            alert('✅ Изменения сохранены локально!\n\n' + 
+                  'Время сохранения: ' + new Date().toLocaleString() +
+                  '\n\nПримечание: данные сохранены в браузере');
+        }, 1000);
+        
     } catch (error) {
-        console.error('Ошибка загрузки изображения:', error);
-        alert('Ошибка загрузки изображения: ' + error.message);
-        return null;
-    } finally {
         showLoading(false);
+        alert('❌ Ошибка сохранения: ' + error.message);
     }
 }
 
-// Сохранение всего контента на сервер
-async function saveAllChanges() {
-    showLoading(true);
-    
-    const contentData = {
-        editableContent: Array.from(document.querySelectorAll('.editable')).map(el => ({
-            selector: getElementSelector(el),
-            content: el.innerHTML
-        })),
-        aboutPhoto: document.querySelector('.about-photo img').src,
-        bizcards: Array.from(document.querySelectorAll('.bizcard')).map((card, index) => ({
-            id: `biz${index + 1}`,
-            src: card.querySelector('img').src,
-            alt: card.querySelector('img').alt
-        })),
-        workcards: Array.from(document.querySelectorAll('.work-card')).map((card, index) => ({
-            id: `work${index + 1}`,
-            src: card.querySelector('img').src,
-            alt: card.querySelector('img').alt,
-            title: card.querySelector('.work-title').textContent,
-            description: card.querySelector('.work-description').textContent,
-            link: card.querySelector('.work-btn').href
-        })),
-        timestamp: new Date().toISOString()
-    };
-    
+// Загрузка из localStorage
+function loadSavedContent() {
     try {
-        const response = await fetch(API_SAVE_CONTENT, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(contentData)
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            alert('✅ Изменения успешно сохранены на сервере!\n\n' + 
-                  'Время сохранения: ' + new Date(result.timestamp).toLocaleString());
-        } else {
-            throw new Error(result.error || 'Ошибка сохранения');
-        }
-    } catch (error) {
-        console.error('Ошибка сохранения:', error);
-        alert('❌ Ошибка сохранения данных: ' + error.message);
-    } finally {
-        showLoading(false);
-    }
-}
-
-// Загрузка сохраненного контента
-async function loadSavedContent() {
-    try {
-        const response = await fetch(API_LOAD_CONTENT);
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-            console.log('Загружен сохраненный контент:', result.data.timestamp);
-            restoreContent(result.data);
+        const savedData = localStorage.getItem('nikadesigner_content');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            console.log('Загружен сохраненный контент:', data.timestamp);
+            restoreContent(data);
         }
     } catch (error) {
         console.error('Ошибка загрузки контента:', error);
     }
 }
 
-// Восстановление контента из сохраненных данных
+// Восстановление контента
 function restoreContent(data) {
     // Восстанавливаем тексты
     if (data.editableContent) {
@@ -156,11 +136,9 @@ function restoreContent(data) {
         const biztrack = document.getElementById('biztrack');
         const addCard = document.getElementById('addCard');
         
-        // Удаляем старые визитки (кроме кнопки добавления)
         const oldCards = biztrack.querySelectorAll('.bizcard');
         oldCards.forEach(card => card.remove());
         
-        // Добавляем сохраненные визитки
         data.bizcards.forEach(cardData => {
             const newCard = document.createElement('div');
             newCard.className = 'bizcard';
@@ -180,11 +158,9 @@ function restoreContent(data) {
         const workstrack = document.getElementById('workstrack');
         const addWorkCard = document.getElementById('addWorkCard');
         
-        // Удаляем старые работы
         const oldWorkCards = workstrack.querySelectorAll('.work-card');
         oldWorkCards.forEach(card => card.remove());
         
-        // Добавляем сохраненные работы
         data.workcards.forEach(workData => {
             const newCard = document.createElement('div');
             newCard.className = 'work-card tilt';
@@ -207,6 +183,37 @@ function restoreContent(data) {
         });
     }
     
+    // Восстанавливаем логотипы
+    if (data.logocards) {
+        const logostrack = document.getElementById('logostrack');
+        const addLogoCard = document.getElementById('addLogoCard');
+        
+        const oldLogoCards = logostrack.querySelectorAll('.logo-card');
+        oldLogoCards.forEach(card => card.remove());
+        
+        data.logocards.forEach(logoData => {
+            const newCard = document.createElement('div');
+            newCard.className = 'logo-card';
+            
+            const imageDiv = document.createElement('div');
+            imageDiv.className = 'logo-image';
+            
+            const img = document.createElement('img');
+            img.src = logoData.src;
+            img.alt = logoData.alt;
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'logo-text editable';
+            textDiv.contentEditable = isAdminMode;
+            textDiv.textContent = logoData.text;
+            
+            imageDiv.appendChild(img);
+            newCard.appendChild(imageDiv);
+            newCard.appendChild(textDiv);
+            logostrack.insertBefore(newCard, addLogoCard);
+        });
+    }
+    
     updateCarousels();
 }
 
@@ -222,7 +229,6 @@ function getElementSelector(element) {
         selector += '.' + element.className.split(' ').join('.');
     }
     
-    // Добавляем порядковый номер если нужно
     const parent = element.parentNode;
     if (parent) {
         const siblings = Array.from(parent.children).filter(child => 
@@ -239,12 +245,21 @@ function getElementSelector(element) {
     return selector;
 }
 
+function updateCarousels() {
+    bizcards = document.querySelectorAll('.bizcard');
+    workcards = document.querySelectorAll('.work-card');
+    logocards = document.querySelectorAll('.logo-card');
+    initCardEvents();
+    setBizCarouselPosition();
+    setWorkCarouselPosition();
+    setLogoCarouselPosition();
+}
+
 // File upload handlers
 document.getElementById('adminUpload').addEventListener('change', function(e) {
     const files = e.target.files;
     
     if (files.length === 1) {
-        // Один файл - спрашиваем куда добавить
         const fileType = prompt('Куда добавить изображение?\n1 - Визитки\n2 - Работы\n3 - Логотипы');
         
         if (fileType === '1') {
@@ -255,7 +270,6 @@ document.getElementById('adminUpload').addEventListener('change', function(e) {
             addNewLogo(files[0]);
         }
     } else if (files.length > 1) {
-        // Несколько файлов - спрашиваем куда добавить все
         const fileType = prompt(`Куда добавить ${files.length} изображений?\n1 - Визитки\n2 - Работы\n3 - Логотипы`);
         
         for (let i = 0; i < files.length; i++) {
@@ -279,9 +293,11 @@ document.getElementById('adminUpload').addEventListener('change', function(e) {
 document.getElementById('aboutPhotoUpload').addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
-        const imageUrl = await uploadImageToServer(file);
-        if (imageUrl) {
+        try {
+            const imageUrl = await uploadImageLocal(file);
             document.querySelector('.about-photo img').src = imageUrl;
+        } catch (error) {
+            alert('Ошибка загрузки фото: ' + error.message);
         }
     }
 });
@@ -299,29 +315,50 @@ async function addNewBizCard(file) {
         return;
     }
     
-    // Загружаем на сервер
-    const imageUrl = await uploadImageToServer(file);
-    if (!imageUrl) {
-        return;
+    try {
+        const imageUrl = await uploadImageLocal(file);
+        
+        const newCard = document.createElement('div');
+        newCard.className = 'bizcard';
+        newCard.setAttribute('data-modal', `biz${nextCardId}`);
+        
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = `Business Card ${nextCardId}`;
+        
+        newCard.appendChild(img);
+        
+        // Добавляем обработчик для замены изображения
+        if (isAdminMode) {
+            newCard.addEventListener('click', function() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = async function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        try {
+                            const newImageUrl = await uploadImageLocal(file);
+                            img.src = newImageUrl;
+                        } catch (error) {
+                            alert('Ошибка замены изображения: ' + error.message);
+                        }
+                    }
+                };
+                input.click();
+            });
+        }
+        
+        const addCard = document.getElementById('addCard');
+        addCard.parentNode.insertBefore(newCard, addCard);
+        
+        nextCardId++;
+        updateCarousels();
+        
+        console.log('Новая визитка добавлена!');
+    } catch (error) {
+        alert('Ошибка добавления визитки: ' + error.message);
     }
-    
-    const newCard = document.createElement('div');
-    newCard.className = 'bizcard';
-    newCard.setAttribute('data-modal', `biz${nextCardId}`);
-    
-    const img = document.createElement('img');
-    img.src = imageUrl;
-    img.alt = `Business Card ${nextCardId}`;
-    
-    newCard.appendChild(img);
-    
-    const addCard = document.getElementById('addCard');
-    addCard.parentNode.insertBefore(newCard, addCard);
-    
-    nextCardId++;
-    updateCarousels();
-    
-    console.log('Новая визитка добавлена!');
 }
 
 async function addNewWorkCard(file) {
@@ -330,47 +367,59 @@ async function addNewWorkCard(file) {
         return;
     }
     
-    // Загружаем на сервер
-    const imageUrl = await uploadImageToServer(file);
-    if (!imageUrl) {
-        return;
+    try {
+        const imageUrl = await uploadImageLocal(file);
+        
+        const newCard = document.createElement('div');
+        newCard.className = 'work-card tilt';
+        
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = `Work ${nextWorkId}`;
+        
+        const content = document.createElement('div');
+        content.className = 'work-content';
+        content.innerHTML = `
+            <h3 class="work-title editable" contenteditable="${isAdminMode}">Новый проект</h3>
+            <p class="work-description editable" contenteditable="${isAdminMode}">Описание проекта</p>
+            <a href="#" class="work-btn">Открыть проект</a>
+        `;
+        
+        newCard.appendChild(img);
+        newCard.appendChild(content);
+        
+        // Добавляем обработчик для замены изображения
+        if (isAdminMode) {
+            img.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = async function(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        try {
+                            const newImageUrl = await uploadImageLocal(file);
+                            img.src = newImageUrl;
+                        } catch (error) {
+                            alert('Ошибка замены изображения: ' + error.message);
+                        }
+                    }
+                };
+                input.click();
+            });
+        }
+        
+        const addCard = document.getElementById('addWorkCard');
+        addCard.parentNode.insertBefore(newCard, addCard);
+        
+        nextWorkId++;
+        updateCarousels();
+        
+        console.log('Новая работа добавлена!');
+    } catch (error) {
+        alert('Ошибка добавления работы: ' + error.message);
     }
-    
-    const newCard = document.createElement('div');
-    newCard.className = 'work-card tilt';
-    
-    const img = document.createElement('img');
-    img.src = imageUrl;
-    img.alt = `Work ${nextWorkId}`;
-    
-    const content = document.createElement('div');
-    content.className = 'work-content';
-    content.innerHTML = `
-        <h3 class="work-title editable" contenteditable="${isAdminMode}">Новый проект</h3>
-        <p class="work-description editable" contenteditable="${isAdminMode}">Описание проекта, которое может быть очень длинным и содержать много деталей о проекте, технологиях и подходах</p>
-        <a href="#" class="work-btn">Открыть проект</a>
-    `;
-    
-    newCard.appendChild(img);
-    newCard.appendChild(content);
-    
-    const addCard = document.getElementById('addWorkCard');
-    addCard.parentNode.insertBefore(newCard, addCard);
-    
-    nextWorkId++;
-    updateCarousels();
-    
-    console.log('Новая работа добавлена!');
-}
-
-function updateCarousels() {
-    bizcards = document.querySelectorAll('.bizcard');
-    workcards = document.querySelectorAll('.work-card');
-    logocards = document.querySelectorAll('.logo-card');
-    initCardEvents();
-    setBizCarouselPosition();
-    setWorkCarouselPosition();
-    setLogoCarouselPosition();
 }
 
 async function addNewLogo(file) {
@@ -379,57 +428,59 @@ async function addNewLogo(file) {
         return;
     }
     
-    // Загружаем на сервер
-    const imageUrl = await uploadImageToServer(file);
-    if (!imageUrl) {
-        return;
-    }
-    
-    const newCard = document.createElement('div');
-    newCard.className = 'logo-card';
-    
-    const imageDiv = document.createElement('div');
-    imageDiv.className = 'logo-image';
-    
-    const img = document.createElement('img');
-    img.src = imageUrl;
-    img.alt = `Logo ${nextLogoId}`;
-    
-    const textDiv = document.createElement('div');
-    textDiv.className = 'logo-text editable';
-    textDiv.contentEditable = isAdminMode;
-    textDiv.textContent = 'Новый логотип';
-    
-    imageDiv.appendChild(img);
-    newCard.appendChild(imageDiv);
-    newCard.appendChild(textDiv);
-    
-    const addCard = document.getElementById('addLogoCard');
-    addCard.parentNode.insertBefore(newCard, addCard);
-    
-    // Добавляем обработчик клика для редактирования изображения
-    if (isAdminMode) {
-        imageDiv.addEventListener('click', function() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = async function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const newImageUrl = await uploadImageToServer(file);
-                    if (newImageUrl) {
-                        img.src = newImageUrl;
+    try {
+        const imageUrl = await uploadImageLocal(file);
+        
+        const newCard = document.createElement('div');
+        newCard.className = 'logo-card';
+        
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'logo-image';
+        
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = `Logo ${nextLogoId}`;
+        
+        const textDiv = document.createElement('div');
+        textDiv.className = 'logo-text editable';
+        textDiv.contentEditable = isAdminMode;
+        textDiv.textContent = 'Новый логотип';
+        
+        imageDiv.appendChild(img);
+        newCard.appendChild(imageDiv);
+        newCard.appendChild(textDiv);
+        
+        // Добавляем обработчик для замены изображения
+        if (isAdminMode) {
+            imageDiv.addEventListener('click', function() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = async function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        try {
+                            const newImageUrl = await uploadImageLocal(file);
+                            img.src = newImageUrl;
+                        } catch (error) {
+                            alert('Ошибка замены изображения: ' + error.message);
+                        }
                     }
-                }
-            };
-            input.click();
-        });
+                };
+                input.click();
+            });
+        }
+        
+        const addCard = document.getElementById('addLogoCard');
+        addCard.parentNode.insertBefore(newCard, addCard);
+        
+        nextLogoId++;
+        updateCarousels();
+        
+        console.log('Новый логотип добавлен!');
+    } catch (error) {
+        alert('Ошибка добавления логотипа: ' + error.message);
     }
-    
-    nextLogoId++;
-    updateCarousels();
-    
-    console.log('Новый логотип добавлен!');
 }
 
 // Add card button handlers
@@ -506,7 +557,6 @@ function setBizCarouselPosition() {
     const gap = 20;
     const containerWidth = document.querySelector('.bizviewport').offsetWidth;
     
-    // Рассчитываем отступ с учетом левого padding
     const leftPadding = window.innerWidth <= 768 ? 16 : 24;
     const offset = currentBizIndex * (cardWidth + gap);
     
@@ -521,12 +571,9 @@ function clampBizIndex(index) {
     const containerWidth = document.querySelector('.bizviewport').offsetWidth;
     const leftPadding = window.innerWidth <= 768 ? 16 : 24;
     
-    // Общая ширина всех карточек с учетом gap
     const totalCardsWidth = (cardWidth + gap) * bizcards.length - gap;
-    // Доступная ширина для прокрутки
     const availableWidth = containerWidth - leftPadding;
     
-    // Максимальное количество шагов
     const maxSteps = Math.max(0, Math.ceil((totalCardsWidth - availableWidth) / (cardWidth + gap)));
     
     return Math.max(0, Math.min(index, maxSteps));
@@ -556,7 +603,6 @@ function setWorkCarouselPosition() {
     const gap = 20;
     const containerWidth = document.querySelector('.works-viewport').offsetWidth;
     
-    // Рассчитываем отступ с учетом левого padding
     const leftPadding = window.innerWidth <= 768 ? 16 : 24;
     const offset = currentWorkIndex * (cardWidth + gap);
     
@@ -571,12 +617,9 @@ function clampWorkIndex(index) {
     const containerWidth = document.querySelector('.works-viewport').offsetWidth;
     const leftPadding = window.innerWidth <= 768 ? 16 : 24;
     
-    // Общая ширина всех карточек с учетом gap
     const totalCardsWidth = (cardWidth + gap) * workcards.length - gap;
-    // Доступная ширина для прокрутки
     const availableWidth = containerWidth - leftPadding;
     
-    // Максимальное количество шагов
     const maxSteps = Math.max(0, Math.ceil((totalCardsWidth - availableWidth) / (cardWidth + gap)));
     
     return Math.max(0, Math.min(index, maxSteps));
@@ -606,7 +649,6 @@ function setLogoCarouselPosition() {
     const gap = 20;
     const containerWidth = document.querySelector('.logos-viewport').offsetWidth;
     
-    // Рассчитываем отступ с учетом левого padding
     const leftPadding = window.innerWidth <= 768 ? 16 : 24;
     const offset = currentLogoIndex * (cardWidth + gap);
     
@@ -621,12 +663,9 @@ function clampLogoIndex(index) {
     const containerWidth = document.querySelector('.logos-viewport').offsetWidth;
     const leftPadding = window.innerWidth <= 768 ? 16 : 24;
     
-    // Общая ширина всех карточек с учетом gap
     const totalCardsWidth = (cardWidth + gap) * logocards.length - gap;
-    // Доступная ширина для прокрутки
     const availableWidth = containerWidth - leftPadding;
     
-    // Максимальное количество шагов
     const maxSteps = Math.max(0, Math.ceil((totalCardsWidth - availableWidth) / (cardWidth + gap)));
     
     return Math.max(0, Math.min(index, maxSteps));
@@ -683,7 +722,65 @@ function initCardEvents() {
                 logoImage.addEventListener('click', handleLogoImageClick);
             }
         });
+        
+        // Обработчики для замены изображений визиток и работ
+        currentBizCards.forEach(card => {
+            card.removeEventListener('click', handleBizImageClick);
+            card.addEventListener('click', handleBizImageClick);
+        });
+        
+        currentWorkCards.forEach(card => {
+            const img = card.querySelector('img');
+            if (img) {
+                img.removeEventListener('click', handleWorkImageClick);
+                img.addEventListener('click', handleWorkImageClick);
+            }
+        });
     }
+}
+
+function handleBizImageClick(e) {
+    if (!isAdminMode) return;
+    e.stopPropagation();
+    
+    const img = e.currentTarget.querySelector('img');
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            try {
+                const newImageUrl = await uploadImageLocal(file);
+                img.src = newImageUrl;
+            } catch (error) {
+                alert('Ошибка замены изображения: ' + error.message);
+            }
+        }
+    };
+    input.click();
+}
+
+function handleWorkImageClick(e) {
+    if (!isAdminMode) return;
+    e.stopPropagation();
+    
+    const img = e.currentTarget;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            try {
+                const newImageUrl = await uploadImageLocal(file);
+                img.src = newImageUrl;
+            } catch (error) {
+                alert('Ошибка замены изображения: ' + error.message);
+            }
+        }
+    };
+    input.click();
 }
 
 function handleLogoImageClick(e) {
@@ -697,9 +794,11 @@ function handleLogoImageClick(e) {
     input.onchange = async function(event) {
         const file = event.target.files[0];
         if (file) {
-            const newImageUrl = await uploadImageToServer(file);
-            if (newImageUrl) {
+            try {
+                const newImageUrl = await uploadImageLocal(file);
                 img.src = newImageUrl;
+            } catch (error) {
+                alert('Ошибка замены изображения: ' + error.message);
             }
         }
     };
@@ -707,6 +806,8 @@ function handleLogoImageClick(e) {
 }
 
 function handleWorkClick(e) {
+    if (isAdminMode) return; // В админ режиме не открываем модал
+    
     e.preventDefault();
     const workCard = e.currentTarget;
     const img = workCard.querySelector('img');
@@ -724,6 +825,8 @@ function handleWorkClick(e) {
 }
 
 function handleBizMobileClick(e) {
+    if (isAdminMode) return; // В админ режиме не открываем модал
+    
     const img = e.currentTarget.querySelector('img');
     modalImage.src = img.src;
     modalImage.alt = img.alt;
@@ -800,6 +903,7 @@ contactForm.addEventListener('submit', async (e) => {
 
 // Initialize
 window.addEventListener('load', () => {
+    loadSavedContent(); // Загружаем сохраненные данные
     animateMarquee();
     setBizCarouselPosition();
     setWorkCarouselPosition();
@@ -814,7 +918,6 @@ window.addEventListener('load', () => {
 });
 
 window.addEventListener('resize', () => {
-    // Сбрасываем индексы при изменении размера окна
     currentBizIndex = clampBizIndex(currentBizIndex);
     currentWorkIndex = clampWorkIndex(currentWorkIndex);
     currentLogoIndex = clampLogoIndex(currentLogoIndex);
