@@ -1,0 +1,44 @@
+<!-- Contact Section Component -->
+<section id="contact" class="contact reveal">
+    <div class="container">
+        <h2 class="section-title editable" contenteditable="false">Связаться</h2>
+        <form class="contact-form" id="contactForm">
+            <div class="form-group">
+                <label for="name">Имя *</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Телефон</label>
+                <input type="tel" id="phone" name="phone">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="service">Услуга</label>
+                <select id="service" name="service">
+                    <option value="">Выберите услугу</option>
+                    <option value="landing">Лендинг</option>
+                    <option value="website">Корпоративный сайт</option>
+                    <option value="ecommerce">Интернет-магазин</option>
+                    <option value="redesign">Редизайн</option>
+                    <option value="consultation">Консультация</option>
+                    <option value="other">Другое</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="message">Сообщение</label>
+                <textarea id="message" name="message" placeholder="Расскажите о вашем проекте..."></textarea>
+            </div>
+            
+            <button type="submit" class="submit-btn">Отправить заявку</button>
+            
+            <div class="form-status" id="formStatus"></div>
+        </form>
+    </div>
+</section>
