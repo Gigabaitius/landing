@@ -40,7 +40,7 @@ function toggleAdminMode() {
     updateCarousels();
 }
 
-// Frontend-only загрузка изображения (через FileReader)
+// Frontend-only загрузка изображения с сжатием
 function uploadImageLocal(file) {
     return new Promise((resolve, reject) => {
         if (!file || !file.type.startsWith('image/')) {
@@ -48,9 +48,50 @@ function uploadImageLocal(file) {
             return;
         }
         
+        // Проверяем размер файла (максимум 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            reject(new Error('Файл слишком большой. Максимум 5MB.'));
+            return;
+        }
+        
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Определяем максимальные размеры
+            const maxWidth = 800;
+            const maxHeight = 600;
+            
+            let { width, height } = img;
+            
+            // Пропорциональное масштабирование
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Рисуем сжатое изображение
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Конвертируем в Data URL с сжатием
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7); // 70% качество
+            
+            console.log(`Изображение сжато: ${file.size} → ${Math.round(dataUrl.length * 0.75)} байт`);
+            resolve(dataUrl);
+        };
+        
+        img.onerror = function() {
+            reject(new Error('Ошибка загрузки изображения'));
+        };
+        
         const reader = new FileReader();
         reader.onload = function(e) {
-            resolve(e.target.result); // возвращаем data URL
+            img.src = e.target.result;
         };
         reader.onerror = function() {
             reject(new Error('Ошибка чтения файла'));
@@ -59,11 +100,69 @@ function uploadImageLocal(file) {
     });
 }
 
-// Сохранение в localStorage (вместо сервера)
+// Проверка размера localStorage
+function checkStorageSize() {
+    let totalSize = 0;
+    for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+            totalSize += localStorage[key].length;
+        }
+    }
+    
+    const sizeInMB = (totalSize / 1024 / 1024).toFixed(2);
+    const maxSizeApprox = 5; // Примерно 5MB лимит в большинстве браузеров
+    
+    return {
+        currentSize: totalSize,
+        sizeInMB: parseFloat(sizeInMB),
+        maxSizeApprox: maxSizeApprox,
+        isNearLimit: parseFloat(sizeInMB) > maxSizeApprox * 0.8
+    };
+}
+
+// Очистка localStorage
+function clearAllData() {
+    const confirmation = confirm(
+        '⚠️ ВНИМАНИЕ!\n\n' +
+        'Это удалит ВСЕ сохраненные данные:\n' +
+        '• Загруженные изображения\n' +
+        '• Тексты и ссылки\n' +
+        '• Настройки проектов\n\n' +
+        'Продолжить очистку?'
+    );
+    
+    if (confirmation) {
+        localStorage.removeItem('nikadesigner_content');
+        alert('✅ Данные очищены!\n\nОбновите страницу для сброса к исходному состоянию.');
+        location.reload();
+    }
+}
+
+// Сохранение с проверкой размера
 function saveAllChanges() {
     showLoading(true);
     
     try {
+        // Проверяем текущий размер
+        const storageInfo = checkStorageSize();
+        
+        if (storageInfo.isNearLimit) {
+            const proceed = confirm(
+                `⚠️ Внимание: localStorage почти заполнен!\n\n` +
+                `Текущий размер: ${storageInfo.sizeInMB} MB\n` +
+                `Лимит браузера: ~${storageInfo.maxSizeApprox} MB\n\n` +
+                `Рекомендуется:\n` +
+                `• Использовать меньше изображений\n` +
+                `• Очистить старые данные\n\n` +
+                `Продолжить сохранение?`
+            );
+            
+            if (!proceed) {
+                showLoading(false);
+                return;
+            }
+        }
+        
         const contentData = {
             editableContent: Array.from(document.querySelectorAll('.editable')).map(el => ({
                 selector: getElementSelector(el),
@@ -92,18 +191,49 @@ function saveAllChanges() {
             timestamp: new Date().toISOString()
         };
         
-        localStorage.setItem('nikadesigner_content', JSON.stringify(contentData));
+        // Пробуем сохранить
+        const dataString = JSON.stringify(contentData);
+        const dataSizeMB = (dataString.length / 1024 / 1024).toFixed(2);
+        
+        console.log(`Размер сохраняемых данных: ${dataSizeMB} MB`);
+        
+        localStorage.setItem('nikadesigner_content', dataString);
+        
+        const finalStorageInfo = checkStorageSize();
         
         setTimeout(() => {
             showLoading(false);
-            alert('✅ Изменения сохранены локально!\n\n' + 
-                  'Время сохранения: ' + new Date().toLocaleString() +
-                  '\n\nПримечание: данные сохранены в браузере');
+            alert(
+                '✅ Изменения успешно сохранены!\n\n' + 
+                `Время: ${new Date().toLocaleString()}\n` +
+                `Размер данных: ${dataSizeMB} MB\n` +
+                `Общий размер localStorage: ${finalStorageInfo.sizeInMB} MB\n\n` +
+                'Данные сохранены в браузере локально.'
+            );
         }, 1000);
         
     } catch (error) {
         showLoading(false);
-        alert('❌ Ошибка сохранения: ' + error.message);
+        
+        if (error.name === 'QuotaExceededError' || error.message.includes('quota')) {
+            // Специальная обработка переполнения
+            const storageInfo = checkStorageSize();
+            alert(
+                '❌ ОШИБКА: Недостаточно места!\n\n' +
+                `localStorage переполнен:\n` +
+                `• Текущий размер: ${storageInfo.sizeInMB} MB\n` +
+                `• Лимит браузера: ~${storageInfo.maxSizeApprox} MB\n\n` +
+                `Решения:\n` +
+                `1. Удалите лишние изображения\n` +
+                `2. Очистите данные кнопкой "🗑️ Очистить"\n` +
+                `3. Используйте изображения меньшего размера\n\n` +
+                `Попробуйте снова после очистки.`
+            );
+        } else {
+            alert('❌ Ошибка сохранения: ' + error.message);
+        }
+        
+        console.error('Ошибка сохранения:', error);
     }
 }
 
