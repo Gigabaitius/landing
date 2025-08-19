@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ника — Web Designer</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Admin Panel -->
@@ -19,7 +19,11 @@
             👤 Изменить фото "Обо мне"
         </label>
         <div class="loading-spinner" id="loadingSpinner"></div>
-        <button class="admin-save-btn" onclick="saveAllChanges()">💾 Сохранить изменения</button>
+        <button class="admin-save-btn" onclick="saveAllChanges()">💾 Сохранить в браузере</button>
+        <div style="margin-top: 12px; font-size: 11px; color: var(--muted); text-align: center;">
+            Frontend-only версия<br>
+            Данные сохраняются локально
+        </div>
     </div>
 
     <!-- Header -->
